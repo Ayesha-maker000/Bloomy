@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF--8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bloomy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class', // Retained for potential future use or plugins, but theming is now data-attribute based.
+        theme: {
+          extend: {
+            colors: {
+              // Semantic color variables for theming
+              'bg-primary': 'var(--color-bg-primary)',
+              'bg-secondary': 'var(--color-bg-secondary)',
+              'bg-accent': 'var(--color-bg-accent)',
+              'bg-input': 'var(--color-bg-input)',
+              'text-primary': 'var(--color-text-primary)',
+              'text-secondary': 'var(--color-text-secondary)',
+              'text-accent': 'var(--color-text-accent)',
+              'brand-primary': 'var(--color-brand-primary)',
+              'brand-secondary': 'var(--color-brand-secondary)',
+              'brand-hover': 'var(--color-brand-hover)',
+              'border-primary': 'var(--color-border-primary)',
+              
+              // Original palette kept for non-themed elements if needed
+              'bloom-red': {
+                  300: '#FFC7C7',
+                  500: '#FF8A8A',
+                  600: '#E67B7B',
+                  700: '#CC6C6C',
+              },
+              'peach': '#FFDAB9',
+              'golden-yellow': '#FFDF7A',
+              'leaf-green': '#A8D8B9',
+            },
+            fontFamily: {
+              'nunito': ['"Nunito"', 'sans-serif'],
+              'inter': ['"Inter"', 'sans-serif'],
+              'lobster': ['"Lobster"', 'cursive'],
+              'poppins': ['"Poppins"', 'sans-serif'],
+              'caveat': ['"Caveat"', 'cursive'],
+              'comfortaa': ['"Comfortaa"', 'sans-serif'],
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-out forwards',
+              'slide-in': 'slideIn 0.3s ease-out forwards',
+              'bloom-in': 'bloomIn 0.4s ease-out forwards',
+              'joyful-bounce': 'joyfulBounce 1s ease-out forwards',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              slideIn: {
+                '0%': { opacity: '0', transform: 'translateY(-20px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              bloomIn: {
+                '0%': { opacity: '0', transform: 'scale(0.95) translateY(10px)' },
+                '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+              },
+              joyfulBounce: {
+                '0%': { transform: 'translateY(20%) scale(0.9)', opacity: '0' },
+                '50%': { transform: 'translateY(-10%)', opacity: '1' },
+                '70%': { transform: 'translateY(3%)' },
+                '90%': { transform: 'translateY(-1%)' },
+                '100%': { transform: 'translateY(0) scale(1)', opacity: '1' },
+              },
+            }
+          },
+        },
+      }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Inter:wght@400;600;700&family=Lobster&family=Poppins:wght@400;600&family=Caveat:wght@400;700&family=Comfortaa:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+      :root, [data-theme="classic"] {
+        --bg-grad-1: #FFDAB9; --bg-grad-2: #FFC7C7; --bg-grad-3: #A8D8B9; --bg-grad-4: #FFDF7A;
+        --color-bg-primary: #F3F4F6; --color-bg-secondary: #FFFFFF; --color-bg-accent: rgba(255, 255, 255, 0.5); --color-bg-input: #F3F4F6;
+        --color-text-primary: #1F2937; --color-text-secondary: #4B5563; --color-text-accent: #CC6C6C;
+        --color-brand-primary: #FF8A8A; --color-brand-secondary: #FFC7C7; --color-brand-hover: #E67B7B;
+        --color-border-primary: #F3F4F6;
+        --scrollbar-track: rgba(243, 244, 246, 0.5); --scrollbar-thumb: #FF8A8A; --scrollbar-thumb-hover: #E67B7B;
+      }
+      [data-theme="starlight"] {
+        --bg-grad-1: #2C3E50; --bg-grad-2: #34495E; --bg-grad-3: #233140; --bg-grad-4: #34495E;
+        --color-bg-primary: #2C3E50; --color-bg-secondary: #34495E; --color-bg-accent: rgba(52, 73, 94, 0.5); --color-bg-input: #2C3E50;
+        --color-text-primary: #ECF0F1; --color-text-secondary: #BDC3C7; --color-text-accent: #FFC7C7;
+        --color-brand-primary: #FFC7C7; --color-brand-secondary: #FF8A8A; --color-brand-hover: #FF8A8A;
+        --color-border-primary: #2C3E50;
+        --scrollbar-track: rgba(52, 73, 94, 0.5); --scrollbar-thumb: #FFC7C7; --scrollbar-thumb-hover: #FF8A8A;
+      }
+       [data-theme="sunset"] {
+        --bg-grad-1: #f8b595; --bg-grad-2: #f67280; --bg-grad-3: #c06c84; --bg-grad-4: #6c5b7b;
+        --color-bg-primary: #4a4e69; --color-bg-secondary: #6c5b7b; --color-bg-accent: rgba(74, 78, 105, 0.5); --color-bg-input: #4a4e69;
+        --color-text-primary: #f2e9e4; --color-text-secondary: #c9ada7; --color-text-accent: #f67280;
+        --color-brand-primary: #f67280; --color-brand-secondary: #f8b595; --color-brand-hover: #c06c84;
+        --color-border-primary: #4a4e69;
+        --scrollbar-track: rgba(74, 78, 105, 0.5); --scrollbar-thumb: #f67280; --scrollbar-thumb-hover: #c06c84;
+      }
+      [data-theme="forest"] {
+        --bg-grad-1: #cad2c5; --bg-grad-2: #a8d8b9; --bg-grad-3: #84a98c; --bg-grad-4: #52796f;
+        --color-bg-primary: #f0ead2; --color-bg-secondary: #ffffff; --color-bg-accent: rgba(255, 255, 255, 0.5); --color-bg-input: #f0ead2;
+        --color-text-primary: #354f52; --color-text-secondary: #52796f; --color-text-accent: #84a98c;
+        --color-brand-primary: #84a98c; --color-brand-secondary: #a8d8b9; --color-brand-hover: #52796f;
+        --color-border-primary: #f0ead2;
+        --scrollbar-track: rgba(240, 234, 210, 0.5); --scrollbar-thumb: #84a98c; --scrollbar-thumb-hover: #52796f;
+      }
+      [data-theme="ocean"] {
+        --bg-grad-1: #a2d2ff; --bg-grad-2: #bde0fe; --bg-grad-3: #89c2d9; --bg-grad-4: #61a5c2;
+        --color-bg-primary: #f0f8ff; --color-bg-secondary: #ffffff; --color-bg-accent: rgba(255, 255, 255, 0.5); --color-bg-input: #f0f8ff;
+        --color-text-primary: #013a63; --color-text-secondary: #01497c; --color-text-accent: #2c7da0;
+        --color-brand-primary: #2a6f97; --color-brand-secondary: #89c2d9; --color-brand-hover: #01497c;
+        --color-border-primary: #f0f8ff;
+        --scrollbar-track: rgba(240, 248, 255, 0.5); --scrollbar-thumb: #2a6f97; --scrollbar-thumb-hover: #01497c;
+      }
+
+      @keyframes gradient-animation {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      body {
+        font-family: 'Nunito', sans-serif;
+        background: linear-gradient(-45deg, var(--bg-grad-1), var(--bg-grad-2), var(--bg-grad-3), var(--bg-grad-4));
+        background-size: 400% 400%;
+        animation: gradient-animation 18s ease infinite;
+        color: var(--color-text-primary);
+      }
+      
+      /* Custom Scrollbar Styling */
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-track { background: var(--scrollbar-track); border-radius: 10px; }
+      ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+      * { scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track); }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.27.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react-markdown": "https://aistudiocdn.com/react-markdown@^10.1.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
