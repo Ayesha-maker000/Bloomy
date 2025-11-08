@@ -2,16 +2,40 @@ import type { User } from '../types';
 
 // --- MOCK DATABASE ---
 // In a real app, this would be your database (e.g., MongoDB, Firebase, PostgreSQL).
-const MOCK_USERS: { [email: string]: User & { passwordHash: string } } = {
-  "test@example.com": {
-    id: 'user-1',
-    name: 'Sunshine',
-    email: 'test@example.com',
-    passwordHash: 'hashed_password_123' // In a real app, this would be a proper bcrypt hash
+
+const DB_KEY = 'bloomy-mock-db';
+const SESSION_KEY = 'bloomy-auth-session';
+
+const initializeDb = (): { [email: string]: User & { passwordHash: string } } => {
+  try {
+    const storedDb = localStorage.getItem(DB_KEY);
+    if (storedDb) {
+      return JSON.parse(storedDb);
+    }
+  } catch (e) {
+    console.error("Failed to parse mock DB from localStorage", e);
   }
+  
+  // Default DB if nothing in localStorage or parsing fails
+  const defaultDb = {
+    "test@example.com": {
+      id: 'user-1',
+      name: 'Sunshine',
+      email: 'test@example.com',
+      passwordHash: 'hashed_password_123' // The password for this user is "password"
+    }
+  };
+  localStorage.setItem(DB_KEY, JSON.stringify(defaultDb));
+  return defaultDb;
 };
 
-const SESSION_KEY = 'bloomy-auth-session';
+// Use `let` so it can be modified by the signup function.
+let MOCK_USERS = initializeDb();
+
+const saveDb = () => {
+  localStorage.setItem(DB_KEY, JSON.stringify(MOCK_USERS));
+};
+
 
 // --- MOCK API FUNCTIONS ---
 
@@ -39,6 +63,8 @@ export const signup = (name: string, email: string, password: string): Promise<{
         ...newUser,
         passwordHash: `hashed_${password}_123`, // MOCK HASHING
       };
+      
+      saveDb(); // Save the updated user list to localStorage
 
       const mockToken = `mock-jwt-token-for-${newUser.id}`;
       

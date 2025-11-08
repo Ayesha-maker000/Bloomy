@@ -4,7 +4,7 @@ import { BloomyMascot, SendIcon } from './Icons';
 import Markdown from 'react-markdown';
 
 // Custom hook to manage the typewriter animation state
-const useTypewriter = (text: string, speed = 55) => {
+const useTypewriter = (text: string, speed = 35) => {
   const [displayedText, setDisplayedText] = useState('');
 
   // Effect to handle resetting vs. continuing the animation
