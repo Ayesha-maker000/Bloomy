@@ -22,6 +22,12 @@ export interface ChatMessage {
   isEasterEgg?: boolean;
 }
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export type Theme = 'Classic' | 'Starlight' | 'Sunset' | 'Forest' | 'Ocean' | 'Custom';
 export type Font = 'Nunito' | 'Inter' | 'Lobster' | 'Poppins' | 'Caveat' | 'Comfortaa';
 
@@ -46,7 +52,6 @@ export interface CustomTheme {
 export interface AppSettings {
   theme: Theme;
   font: Font;
-  userName: string;
   petalSettings: PetalSettings;
   customTheme?: CustomTheme;
 }

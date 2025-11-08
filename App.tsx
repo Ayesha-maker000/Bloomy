@@ -6,15 +6,20 @@ import { ChatWindow } from './components/ChatWindow';
 import { JournalGarden } from './components/JournalGarden';
 import { SettingsModal } from './components/SettingsModal';
 import { startChatSession } from './services/geminiService';
-import type { View, ChatMessage, JournalEntry, Mood, AppSettings } from './types';
+import type { View, ChatMessage, JournalEntry, Mood, AppSettings, User } from './types';
 import { AffirmationModal } from './components/AffirmationModal';
 import { affirmations } from './data/affirmations';
 import { FallingPetals } from './components/FallingPetals';
-import { HelplineLink } from './components/HelplineLink';
 import { PetalBreathing } from './components/PetalBreathing';
+import { AuthPage } from './components/AuthPage';
+import { login, signup, logout, checkSession } from './services/authService';
 
 
 const App: React.FC = () => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [isAuthenticating, setIsAuthenticating] = useState<boolean>(true);
+
   const [view, setView] = useState<View>('mood-check-in');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
@@ -27,10 +32,9 @@ const App: React.FC = () => {
   const [settings, setSettings] = useState<AppSettings>(() => {
     try {
       const storedSettings = localStorage.getItem('bloomy-settings');
-       const defaults: AppSettings = {
+       const defaults: Omit<AppSettings, 'userName'> = {
         theme: 'Classic',
         font: 'Nunito',
-        userName: 'sunshine',
         petalSettings: {
           enabled: true,
           color: 'pink',
@@ -47,7 +51,6 @@ const App: React.FC = () => {
 
       if (storedSettings) {
         const parsed = JSON.parse(storedSettings);
-        // Merge with defaults to ensure new settings are present for returning users
         return {
           ...defaults,
           ...parsed,
@@ -61,15 +64,14 @@ const App: React.FC = () => {
           }
         };
       }
-      return defaults;
+      return defaults as AppSettings;
     } catch (error) {
        return {
         theme: 'Classic',
         font: 'Nunito',
-        userName: 'sunshine',
         petalSettings: { enabled: true, color: 'pink', speed: 'medium', density: 'low' },
         customTheme: { c1: '#FFDAB9', c2: '#FFC7C7', c3: '#A8D8B9', c4: '#FFDF7A' }
-      };
+      } as AppSettings;
     }
   });
   
@@ -77,6 +79,14 @@ const App: React.FC = () => {
   const isFirstMessageInSession = useRef<boolean>(true);
   const currentMood = useRef<Mood | null>(null);
   const activeJournalId = useRef<string | null>(null);
+
+  useEffect(() => {
+    const session = checkSession();
+    if (session) {
+      setCurrentUser(session.user);
+    }
+    setIsAuthenticating(false);
+  }, []);
 
   useEffect(() => {
     document.body.style.fontFamily = `'${settings.font}', sans-serif`;
@@ -89,7 +99,6 @@ const App: React.FC = () => {
         document.body.style.setProperty('--bg-grad-4', settings.customTheme.c4);
     } else {
         document.documentElement.dataset.theme = settings.theme.toLowerCase();
-        // Clear inline styles if switching away from custom
         document.body.style.removeProperty('--bg-grad-1');
         document.body.style.removeProperty('--bg-grad-2');
         document.body.style.removeProperty('--bg-grad-3');
@@ -100,16 +109,19 @@ const App: React.FC = () => {
   }, [settings]);
 
   useEffect(() => {
-    chatRef.current = startChatSession(settings.userName);
-  }, [settings.userName]);
+    if (currentUser) {
+        chatRef.current = startChatSession(currentUser.name);
+    }
+  }, [currentUser]);
   
   const handleMoodSelect = (mood: Mood) => {
+    if (!currentUser) return;
     currentMood.current = mood;
     activeJournalId.current = null;
     const welcomeMessage: ChatMessage = {
       id: `welcome-${Date.now()}`,
       sender: 'bloomy',
-      text: `It's nice to see you, ${settings.userName}! How about we write a little about what's on your mind? Your first message will be added to your garden. 🌸`
+      text: `It's nice to see you, ${currentUser.name}! How about we write a little about what's on your mind? Your first message will be added to your garden. 🌸`
     };
     setMessages([welcomeMessage]);
     setView('chat');
@@ -117,14 +129,13 @@ const App: React.FC = () => {
   };
   
   const handleSendMessage = useCallback(async (text: string) => {
-    if (!chatRef.current) return;
+    if (!chatRef.current || !currentUser) return;
 
     const userMessage: ChatMessage = { id: `user-${Date.now()}`, sender: 'user', text };
 
     const updatedMessagesWithUser = [...messages, userMessage];
     setMessages(updatedMessagesWithUser);
 
-    // Easter Egg Trigger
     if (text.trim().toLowerCase() === "let your feelings bloom") {
       setIsBloomyTyping(true);
       setTimeout(() => {
@@ -199,7 +210,7 @@ const App: React.FC = () => {
       setMessages(prev => [...prev, errorMessage]);
       setIsBloomyTyping(false);
     }
-  }, [messages, settings.userName]);
+  }, [messages, currentUser]);
 
   const handleDeleteEntry = (id: string) => {
     setJournalEntries(prev => prev.filter(entry => entry.id !== id));
@@ -219,7 +230,9 @@ const App: React.FC = () => {
     isFirstMessageInSession.current = true;
     currentMood.current = null;
     activeJournalId.current = null;
-    chatRef.current = startChatSession(settings.userName);
+    if (currentUser) {
+        chatRef.current = startChatSession(currentUser.name);
+    }
   }
 
   const handleShowAffirmation = () => {
@@ -228,40 +241,87 @@ const App: React.FC = () => {
     setIsAffirmationOpen(true);
   };
   
+  const handleLogin = async (email: string, password: string): Promise<boolean> => {
+    setAuthError(null);
+    try {
+      const { user } = await login(email, password);
+      setCurrentUser(user);
+      return true;
+    } catch (error) {
+      setAuthError((error as Error).message);
+      return false;
+    }
+  };
+
+  const handleSignup = async (name: string, email: string, password: string): Promise<boolean> => {
+    setAuthError(null);
+    try {
+      const { user } = await signup(name, email, password);
+      setCurrentUser(user);
+      return true;
+    } catch (error) {
+      setAuthError((error as Error).message);
+      return false;
+    }
+  };
+  
+  const handleLogout = () => {
+    logout();
+    setCurrentUser(null);
+    setMessages([]);
+    setJournalEntries([]);
+    setView('mood-check-in');
+  }
+
+  if (isAuthenticating) {
+    return <div className="bg-transparent min-h-screen" />; // Or a loading spinner
+  }
+  
   return (
     <div className={`bg-transparent min-h-screen text-text-primary flex flex-col font-${settings.font.toLowerCase()}`}>
-      {settings.petalSettings.enabled && <FallingPetals settings={settings.petalSettings} />}
-      <Header 
-        currentView={view} 
-        setView={setView} 
-        resetChat={resetChat} 
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onShowAffirmation={handleShowAffirmation}
-        onOpenBreathingExercise={() => setIsBreathingExerciseOpen(true)}
-      />
-      <main className="flex-grow flex flex-col items-center justify-center p-4 z-10">
-        <div className="w-full max-w-2xl mx-auto h-full flex flex-col">
-          {view === 'mood-check-in' && <MoodSelector onMoodSelect={handleMoodSelect} userName={settings.userName} />}
-          {view === 'chat' && <ChatWindow messages={messages} onSendMessage={handleSendMessage} isBloomyTyping={isBloomyTyping} />}
-          {view === 'garden' && <JournalGarden entries={journalEntries} onDeleteEntry={handleDeleteEntry} onSelectEntry={handleSelectEntry} />}
-        </div>
-      </main>
-      <SettingsModal 
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        settings={settings}
-        onSettingsChange={setSettings}
-      />
-      <AffirmationModal
-        isOpen={isAffirmationOpen}
-        onClose={() => setIsAffirmationOpen(false)}
-        affirmation={currentAffirmation}
-      />
-      <HelplineLink />
-      <PetalBreathing
-        isOpen={isBreathingExerciseOpen}
-        onClose={() => setIsBreathingExerciseOpen(false)}
-      />
+      {settings.petalSettings.enabled && currentUser && <FallingPetals settings={settings.petalSettings} />}
+       {!currentUser ? (
+        <AuthPage 
+          onLogin={handleLogin} 
+          onSignup={handleSignup}
+          error={authError} 
+        />
+       ) : (
+        <>
+            <Header 
+                user={currentUser}
+                currentView={view} 
+                setView={setView} 
+                resetChat={resetChat} 
+                onOpenSettings={() => setIsSettingsOpen(true)}
+                onShowAffirmation={handleShowAffirmation}
+                onOpenBreathingExercise={() => setIsBreathingExerciseOpen(true)}
+            />
+            <main className="flex-grow flex flex-col items-center justify-center p-4 z-10">
+                <div className="w-full max-w-2xl mx-auto h-full flex flex-col">
+                {view === 'mood-check-in' && <MoodSelector onMoodSelect={handleMoodSelect} userName={currentUser.name} />}
+                {view === 'chat' && <ChatWindow messages={messages} onSendMessage={handleSendMessage} isBloomyTyping={isBloomyTyping} />}
+                {view === 'garden' && <JournalGarden entries={journalEntries} onDeleteEntry={handleDeleteEntry} onSelectEntry={handleSelectEntry} />}
+                </div>
+            </main>
+            <SettingsModal 
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+                settings={settings}
+                onSettingsChange={setSettings}
+                onLogout={handleLogout}
+            />
+            <AffirmationModal
+                isOpen={isAffirmationOpen}
+                onClose={() => setIsAffirmationOpen(false)}
+                affirmation={currentAffirmation}
+            />
+            <PetalBreathing
+                isOpen={isBreathingExerciseOpen}
+                onClose={() => setIsBreathingExerciseOpen(false)}
+            />
+        </>
+      )}
     </div>
   );
 };
